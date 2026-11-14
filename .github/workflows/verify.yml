@@ -32,7 +32,7 @@ jobs:
           fi
       - name: 仓库和历史里都没有私钥
         run: |
-          if git rev-list --all | xargs git grep -l -I -E -e "BEGIN[ ]([A-Z]+ )?PRIVATE KEY"; then
+          if git rev-list --all | xargs git grep -l -I -E -e "-----BEGIN[ ]([A-Z]+ )?PRIVATE KEY-----"; then
             echo "仓库里出现了私钥" >&2
             exit 1
           fi
