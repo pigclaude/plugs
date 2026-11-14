@@ -1,0 +1,19 @@
+{
+  "name": "pigclaude-official",
+  "owner": {
+    "name": "PigClaude",
+    "url": "https://github.com/pigclaude"
+  },
+  "metadata": {
+    "description": "PigClaude 官方插件目录：每个插件经维护者审核，目录用离线密钥签名。",
+    "pigclaude": {
+      "formatVersion": 1,
+      "serial": 1,
+      "issuedAt": "2026-11-14T10:29:59Z",
+      "expiresAt": "2027-02-12T10:29:59Z",
+      "revoked": [],
+      "revokedKeys": []
+    }
+  },
+  "plugins": []
+}
