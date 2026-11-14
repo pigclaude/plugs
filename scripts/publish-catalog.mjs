@@ -22,7 +22,8 @@ const { values } = parseArgs({
   },
 })
 const root = resolve(import.meta.dirname, "..")
-const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8" })
+const git = (...args) =>
+  execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] })
 const days = Number(values.days)
 if (!Number.isInteger(days) || days < 1 || days > 365) throw new Error("--days 必须是 1 到 365 的整数")
 

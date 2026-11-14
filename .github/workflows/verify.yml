@@ -32,7 +32,7 @@ jobs:
           fi
       - name: 仓库里没有私钥
         run: |
-          if git grep -l -I -e "PRIVATE KEY" -- . ':!scripts' ':!tests' ':!.gitignore'; then
+          if git grep -l -I -e "PRIVATE KEY" -- . ':!scripts' ':!tests' ':!.github'; then
             echo "仓库里出现了私钥" >&2
             exit 1
           fi
