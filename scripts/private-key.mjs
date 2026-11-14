@@ -1,5 +1,4 @@
 // 负责从仓库之外读取签名私钥，以及把新生成的私钥写到仓库之外。私钥文件只允许所有者读写，目录只允许所有者进入。
-import { execFileSync } from "node:child_process"
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 
@@ -24,15 +23,6 @@ export function readPrivateKeyFile(path) {
   if (workTree) throw new Error(`私钥文件在 Git 工作区 ${workTree} 里，拒绝使用`)
   if ((statSync(absolute).mode & 0o077) !== 0) throw new Error("私钥文件的权限必须是 600")
   return readFileSync(absolute, "utf8")
-}
-
-/** 从 macOS 钥匙串的通用密码条目读取私钥（条目内容是 PEM）。 */
-export function readPrivateKeyFromKeychain(service, account) {
-  if (process.platform !== "darwin") throw new Error("钥匙串只在 macOS 上可用")
-  return execFileSync("security", ["find-generic-password", "-s", service, "-a", account, "-w"], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "inherit"],
-  })
 }
 
 /** 把私钥写到 Git 工作区之外：目录权限 700，文件权限 600，已有文件时拒绝覆盖。 */

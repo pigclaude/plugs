@@ -1,12 +1,20 @@
 // 验证私钥只在仓库之外读写，以及发布脚本在临时仓库里递增序号、签名、验签并提交。只用临时生成的测试钥匙。
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { generateKeyPairSync } from "node:crypto"
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs"
+import { createPrivateKey, generateKeyPairSync } from "node:crypto"
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 import { after, describe, it } from "node:test"
-import { signCatalog } from "../scripts/catalog.mjs"
+import { serializeCatalog, signCatalog } from "../scripts/catalog.mjs"
 import { readPrivateKeyFile, writePrivateKeyFile } from "../scripts/private-key.mjs"
 
 const repoRoot = resolve(import.meta.dirname, "..")
@@ -27,7 +35,7 @@ describe("私钥文件", () => {
     writePrivateKeyFile(path, keyPair().privatePem)
     assert.equal(statSync(path).mode & 0o777, 0o600)
     assert.equal(statSync(join(scratch, "outside", "keys")).mode & 0o777, 0o700)
-    assert.match(readPrivateKeyFile(path), /BEGIN PRIVATE KEY/)
+    assert.equal(createPrivateKey(readPrivateKeyFile(path)).asymmetricKeyType, "ed25519")
   })
 
   it("拒绝写进或读取 Git 工作区里的私钥", () => {
@@ -60,6 +68,7 @@ describe("发布脚本", () => {
     git("init", "-q", "-b", "main")
     git("config", "user.name", "test")
     git("config", "user.email", "test@example.invalid")
+    git("config", "commit.gpgsign", "false")
     git("add", ".")
     git("commit", "-q", "-m", "seed")
     const before = JSON.parse(readFileSync(join(repo, ".claude-plugin/marketplace.json"), "utf8"))
@@ -76,7 +85,7 @@ describe("发布脚本", () => {
     assert.match(node("scripts/verify-catalog.mjs", "--since", "HEAD~1"), /目录有效/)
 
     const stale = { ...after, metadata: { ...after.metadata, description: "改了内容没改序号" } }
-    const staleBytes = Buffer.from(`${JSON.stringify(stale, null, 2)}\n`)
+    const staleBytes = serializeCatalog(stale)
     writeFileSync(join(repo, ".claude-plugin/marketplace.json"), staleBytes)
     writeFileSync(
       join(repo, ".claude-plugin/marketplace.json.sig"),

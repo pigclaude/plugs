@@ -16,7 +16,7 @@
 - [ ] 没有运行时下载并执行代码（`eval`、`new Function`、远程脚本、动态 `import` 网址）。
 - [ ] 能力插件：清单里的权限和域名与代码实际用到的一致，没有多申请。
 - [ ] 能力插件：网络请求只发往声明的域名。
-- [ ] Claude Code 插件：只包含 skills、命令和子代理；带 hooks 或 MCP 配置的不上架（PigClaude 不执行它们，审核时也不接受）。
+- [ ] Claude Code 插件：PigClaude 只加载 skills、命令和子代理，不执行插件的 hooks 和 MCP。插件依赖 hooks 或 MCP 才能用时，在 `description` 里写明，避免用户以为装上就能用。
 - [ ] skills 和命令的文字没有诱导模型读取凭据、关闭权限检查或访问未声明的网址。
 - [ ] 不收集用户数据；确实需要的，在 `description` 里写明收集什么、发到哪里。
 
@@ -36,6 +36,6 @@
 
 发现已上架的插件有问题时：
 
-- [ ] 在 `metadata.pigclaude.revoked` 加一条：`name`、`reason`（给用户看的原因）、`revokedAt`；只影响某个提交时写 `sha`。
+- [ ] 在 `metadata.pigclaude.revoked` 加一条：`name`、`repo`、`reason`（给用户看的原因）、`revokedAt`；只影响某个提交时写 `sha`。
 - [ ] 从 `plugins` 里删除或换成修复后的提交。
 - [ ] 立即发布新目录；应用刷新后自动停用命中的插件并显示原因。

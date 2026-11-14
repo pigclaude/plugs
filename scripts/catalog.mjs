@@ -69,7 +69,8 @@ function entryProblems(entry) {
   if (!isRecord(source) || source.source !== "github") {
     problems.push("source 必须是 GitHub 仓库")
   } else {
-    if (typeof source.repo !== "string" || !REPO.test(source.repo)) problems.push("source.repo 无效")
+    if (typeof source.repo !== "string" || !REPO.test(source.repo))
+      problems.push("source.repo 无效")
     if (typeof source.sha !== "string" || !COMMIT.test(source.sha)) {
       problems.push("source.sha 不是 40 位提交号")
     }
@@ -99,11 +100,44 @@ function revocationProblems(revoked, fail) {
       isRecord(item) &&
       typeof item.name === "string" &&
       NAME.test(item.name) &&
+      typeof item.repo === "string" &&
+      REPO.test(item.repo) &&
       (item.sha === undefined || (typeof item.sha === "string" && COMMIT.test(item.sha))) &&
       nonEmpty(item.reason) &&
       timestamp(item.revokedAt) !== null
-    if (!ok) fail(`metadata.pigclaude.revoked[${index}] 需要 name、reason、revokedAt，sha 可选`)
+    if (!ok) {
+      fail(`metadata.pigclaude.revoked[${index}] 需要 name、repo、reason、revokedAt，sha 可选`)
+    }
   })
+}
+
+/** 目录文件的标准写法：两格缩进的 JSON 加换行。签名针对的就是这些字节。 */
+export function serializeCatalog(catalog) {
+  return Buffer.from(`${JSON.stringify(catalog, null, 2)}\n`, "utf8")
+}
+
+/** 精确到秒的 UTC 时间，写成目录里用的 `YYYY-MM-DDTHH:MM:SSZ`。 */
+export function utcSeconds(date) {
+  return date.toISOString().replace(/\.\d{3}Z$/, "Z")
+}
+
+/**
+ * 和上一版目录比较，返回问题列表：内容变了序号必须递增；吊销的钥匙只能增加；
+ * 上一版已经吊销的钥匙不能用来签这一版。
+ */
+export function successionProblems(previous, current, signerKeyId) {
+  const before = previous.metadata.pigclaude
+  const after = current.metadata.pigclaude
+  const problems = []
+  if (after.serial <= before.serial) {
+    problems.push(`目录变了但序号没有递增：${before.serial} → ${after.serial}`)
+  }
+  const dropped = before.revokedKeys.filter((key) => !after.revokedKeys.includes(key))
+  if (dropped.length > 0) problems.push(`撤回了已吊销的钥匙：${dropped.join("、")}`)
+  if (before.revokedKeys.includes(signerKeyId)) {
+    problems.push(`签名所用的钥匙 ${signerKeyId} 在上一版已被吊销`)
+  }
+  return problems
 }
 
 /** 公钥指纹：原始 32 字节 ed25519 公钥的 sha256，写成 `sha256:<十六进制>`。 */
@@ -130,7 +164,8 @@ export function signCatalog(catalogBytes, privateKeyPem) {
  */
 export function verifyCatalog(catalogBytes, signatureText, trustedPublicKeyPems) {
   const document = JSON.parse(signatureText)
-  if (!isRecord(document) || document.algorithm !== "ed25519") throw new Error("签名算法不是 ed25519")
+  if (!isRecord(document) || document.algorithm !== "ed25519")
+    throw new Error("签名算法不是 ed25519")
   const trusted = new Map(trustedPublicKeyPems.map((pem) => [publicKeyFingerprint(pem), pem]))
   const publicKeyPem = trusted.get(document.keyId)
   if (!publicKeyPem) throw new Error(`签名所用的钥匙 ${document.keyId} 不受信任`)
@@ -146,7 +181,8 @@ export function verifyCatalog(catalogBytes, signatureText, trustedPublicKeyPems)
 }
 
 function timestamp(value) {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(value)) return null
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(value))
+    return null
   const time = Date.parse(value)
   return Number.isNaN(time) ? null : time
 }

@@ -5,7 +5,9 @@ import { describe, it } from "node:test"
 import {
   catalogProblems,
   publicKeyFingerprint,
+  serializeCatalog,
   signCatalog,
+  successionProblems,
   verifyCatalog,
 } from "../scripts/catalog.mjs"
 
@@ -28,7 +30,14 @@ function sampleCatalog() {
         serial: 3,
         issuedAt: "2026-11-14T00:00:00Z",
         expiresAt: "2027-02-12T00:00:00Z",
-        revoked: [{ name: "old-tool", reason: "上游停止维护", revokedAt: "2026-11-01T00:00:00Z" }],
+        revoked: [
+          {
+            name: "old-tool",
+            repo: "pigclaude/old-tool",
+            reason: "上游停止维护",
+            revokedAt: "2026-11-01T00:00:00Z",
+          },
+        ],
         revokedKeys: [],
       },
     },
@@ -50,7 +59,7 @@ function sampleCatalog() {
   }
 }
 
-const bytes = (catalog) => Buffer.from(`${JSON.stringify(catalog, null, 2)}\n`)
+const bytes = serializeCatalog
 
 describe("目录格式", () => {
   it("锁定提交和 sha256、带序号和过期时间的目录通过", () => {
@@ -87,11 +96,38 @@ describe("目录格式", () => {
     ])
   })
 
-  it("吊销条目缺少原因时拒绝", () => {
-    const catalog = sampleCatalog()
-    delete catalog.metadata.pigclaude.revoked[0].reason
-    assert.deepEqual(catalogProblems(catalog), [
-      "metadata.pigclaude.revoked[0] 需要 name、reason、revokedAt，sha 可选",
+  it("吊销条目缺少原因或仓库时拒绝", () => {
+    for (const field of ["reason", "repo"]) {
+      const catalog = sampleCatalog()
+      delete catalog.metadata.pigclaude.revoked[0][field]
+      assert.deepEqual(catalogProblems(catalog), [
+        "metadata.pigclaude.revoked[0] 需要 name、repo、reason、revokedAt，sha 可选",
+      ])
+    }
+  })
+})
+
+describe("和上一版目录相比", () => {
+  const signer = `sha256:${"c".repeat(64)}`
+  const other = `sha256:${"d".repeat(64)}`
+
+  it("序号递增、吊销的钥匙只增不减时通过", () => {
+    const before = sampleCatalog()
+    before.metadata.pigclaude.revokedKeys = [other]
+    const after = structuredClone(before)
+    after.metadata.pigclaude.serial += 1
+    assert.deepEqual(successionProblems(before, after, signer), [])
+  })
+
+  it("序号没有递增、撤回已吊销的钥匙、用上一版吊销的钥匙签名时拒绝", () => {
+    const before = sampleCatalog()
+    before.metadata.pigclaude.revokedKeys = [signer]
+    const after = structuredClone(before)
+    after.metadata.pigclaude.revokedKeys = []
+    assert.deepEqual(successionProblems(before, after, signer), [
+      "目录变了但序号没有递增：3 → 3",
+      `撤回了已吊销的钥匙：${signer}`,
+      `签名所用的钥匙 ${signer} 在上一版已被吊销`,
     ])
   })
 })

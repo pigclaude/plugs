@@ -4,16 +4,16 @@
 
 ## 文件
 
-| 路径                                  | 内容                                                         |
-| ------------------------------------- | ------------------------------------------------------------ |
-| `.claude-plugin/marketplace.json`     | 目录本身，Claude Code 的 marketplace.json 格式               |
-| `.claude-plugin/marketplace.json.sig` | 目录文件原始字节的 ed25519 分离签名                          |
-| `keys/current.pub.pem`                | 当前签名钥匙的公钥                                           |
-| `keys/backup.pub.pem`                 | 备用签名钥匙的公钥                                           |
-| `scripts/`                            | 生成钥匙、发布（签名）和校验的脚本，只用 Node 内置模块       |
-| `docs/review-checklist.md`            | 插件上架和更新前的审核清单                                   |
-| `docs/signing.md`                     | 私钥保管、发布步骤、移到离线介质                             |
-| `docs/key-rotation.md`                | 启用备用钥匙、吊销旧钥匙                                     |
+| 路径                                  | 内容                                                   |
+| ------------------------------------- | ------------------------------------------------------ |
+| `.claude-plugin/marketplace.json`     | 目录本身，Claude Code 的 marketplace.json 格式         |
+| `.claude-plugin/marketplace.json.sig` | 目录文件原始字节的 ed25519 分离签名                    |
+| `keys/current.pub.pem`                | 当前签名钥匙的公钥                                     |
+| `keys/backup.pub.pem`                 | 备用签名钥匙的公钥                                     |
+| `scripts/`                            | 生成钥匙、发布（签名）和校验的脚本，只用 Node 内置模块 |
+| `docs/review-checklist.md`            | 插件上架和更新前的审核清单                             |
+| `docs/signing.md`                     | 私钥保管、发布步骤、移到离线介质                       |
+| `docs/key-rotation.md`                | 启用备用钥匙、吊销旧钥匙                               |
 
 ## 公钥指纹
 
@@ -30,14 +30,14 @@
 
 `metadata.pigclaude`：
 
-| 字段            | 含义                                                                                        |
-| --------------- | ------------------------------------------------------------------------------------------- |
-| `formatVersion` | 扩展字段的格式版本，现在是 `1`                                                              |
-| `serial`        | 递增序号。应用拒绝序号比它见过的更小的目录（防回滚）                                        |
-| `issuedAt`      | 签发时间，UTC，精确到秒                                                                     |
-| `expiresAt`     | 过期时间。过期后应用只拦安装和更新，不停用已装的插件                                        |
-| `revoked`       | 吊销列表：`name`、`reason`、`revokedAt`，可选 `sha`（只吊销这个提交；不写就是吊销所有版本） |
-| `revokedKeys`   | 吊销的签名钥匙指纹。应用不再接受这些钥匙签的目录                                            |
+| 字段            | 含义                                                                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `formatVersion` | 扩展字段的格式版本，现在是 `1`                                                                                                              |
+| `serial`        | 递增序号。应用拒绝序号比它见过的更小的目录（防回滚）                                                                                        |
+| `issuedAt`      | 签发时间，UTC，精确到秒                                                                                                                     |
+| `expiresAt`     | 过期时间。过期后应用只拦安装和更新，不停用已装的插件                                                                                        |
+| `revoked`       | 吊销列表：`name`、`repo`、`reason`、`revokedAt`，可选 `sha`（只吊销这个提交；不写就是吊销这个仓库的所有版本）。只对从官方目录安装的插件生效 |
+| `revokedKeys`   | 吊销的签名钥匙指纹。应用不再接受这些钥匙签的目录                                                                                            |
 
 `plugins[]` 的每个条目：
 
@@ -45,9 +45,22 @@
 - `source`：只能是 `{ "source": "github", "repo": "owner/repo", "sha": "<40 位提交号>" }`，可以加 `ref` 方便阅读，但安装只认 `sha`。
 - `pigclaude`：
   - `kind`：`capability`（能力插件）或 `claude-code`（Claude Code 插件）。
-  - `sha256`：`https://codeload.github.com/<repo>/tar.gz/<sha>` 这个归档的 sha256，小写十六进制。
+  - `sha256`：`https://codeload.github.com/<repo>/tar.gz/<sha>` 这个归档的 sha256，小写十六进制。GitHub 不保证归档的字节长期不变；如果哪天对不上，维护者重新下载核对源码没变后更新哈希并重新发布。
   - `permissions`、`domains`：插件申请的权限和网络域名，安装前完整披露。
   - `review`：`{ "status": "reviewed", "reviewedAt": "<UTC>", "reviewer": "<可选>" }`。
+
+## 签名文件
+
+`.claude-plugin/marketplace.json.sig` 是 JSON：`algorithm` 固定为 `ed25519`，`keyId` 是签名钥匙的指纹，`signature` 是对 `marketplace.json` 原始字节的 64 字节签名的 base64。验签针对原始字节，不对 JSON 重新排版。
+
+## 应用需要做的
+
+供 [pigclaude/pigclaude#154](https://github.com/pigclaude/pigclaude/issues/154) 实现：
+
+- 只接受 `keyId` 是内置公钥之一、且不在已知吊销列表里的签名；先验签，再解析目录。
+- 记住验签通过的目录里的 `revokedKeys` 和序号，并记下每个序号是哪把钥匙签的。以后拒绝吊销钥匙签的目录；某把钥匙被吊销时，丢弃它签过的序号带来的下限，避免泄露的钥匙签一个极大的序号把正常目录挡在外面。
+- 序号比记住的更小就拒绝；`expiresAt` 已过只拦安装和更新。
+- 安装时按 `source.sha` 下载归档，核对 `pigclaude.sha256`；吊销按 `repo` 和 `name` 匹配，写了 `sha` 时只匹配那个提交。
 
 ## 校验
 

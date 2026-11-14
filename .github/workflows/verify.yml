@@ -1,4 +1,4 @@
-# 校验官方目录的格式、签名和序号，并跑脚本测试。CI 只用 keys/ 里的公钥，不持有私钥。
+# 校验官方目录的格式、签名、过期时间和序号，并跑脚本测试。CI 只用 keys/ 里的公钥，不持有私钥。
 name: Verify catalog
 
 on:
@@ -25,14 +25,14 @@ jobs:
         env:
           BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
         run: |
-          if [ -n "$BASE" ] && git cat-file -e "$BASE^{commit}" 2>/dev/null; then
-            node scripts/verify-catalog.mjs --since "$BASE"
-          else
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
             node scripts/verify-catalog.mjs
+          else
+            node scripts/verify-catalog.mjs --since "$BASE"
           fi
-      - name: 仓库里没有私钥
+      - name: 仓库和历史里都没有私钥
         run: |
-          if git grep -l -I -e "PRIVATE KEY" -- . ':!scripts' ':!tests' ':!.github'; then
+          if git rev-list --all | xargs git grep -l -I -E -e "BEGIN[ ]([A-Z]+ )?PRIVATE KEY"; then
             echo "仓库里出现了私钥" >&2
             exit 1
           fi

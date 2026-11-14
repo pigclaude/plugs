@@ -6,14 +6,14 @@
 
 两把 ed25519 钥匙，私钥是 PKCS#8 PEM：
 
-| 钥匙 | 默认位置                                | 公钥                   |
-| ---- | --------------------------------------- | ---------------------- |
+| 钥匙 | 默认位置                                 | 公钥                   |
+| ---- | ---------------------------------------- | ---------------------- |
 | 当前 | `~/.pigclaude-signing/plugs/current.pem` | `keys/current.pub.pem` |
 | 备用 | `~/.pigclaude-signing/plugs/backup.pem`  | `keys/backup.pub.pem`  |
 
 目录权限 700，文件权限 600。脚本拒绝读取在 Git 工作区里、或者组和其他用户能访问的私钥文件。
 
-也可以把私钥放在 macOS 钥匙串的通用密码条目里（内容是整段 PEM），发布时用 `--keychain-service <服务名> --keychain-account <账户>` 读取。
+脚本只从文件读取私钥，不支持钥匙串：`security find-generic-password -w` 会把多行的 PEM 输出成十六进制。
 
 ## 发布
 
@@ -25,6 +25,7 @@
    ```
 
    脚本把序号设为上次提交的序号加一，写入签发时间和过期时间，校验格式，用私钥签名，再用 `keys/` 里的公钥验签，然后提交。
+
 3. 核对提交，`git push origin main`。CI 的「Verify catalog」会再校验一次。
 
 目录过期前（默认 90 天）要重新发布一次，即使内容没变；过期后应用会拦下安装和更新。
@@ -49,5 +50,6 @@
    ```
 
    对备用钥匙重复一次（`--key /Volumes/<介质>/backup.pem`）。
-4. 删除本机副本：`rm -P ~/.pigclaude-signing/plugs/current.pem ~/.pigclaude-signing/plugs/backup.pem`，再删除空目录。如果放进过钥匙串，也删除条目：`security delete-generic-password -s <服务名> -a <账户>`。
+
+4. 删除本机副本：`rm -P ~/.pigclaude-signing/plugs/current.pem ~/.pigclaude-signing/plugs/backup.pem`，再删除空目录。
 5. 以后发布时插上介质，用 `--key /Volumes/<介质>/current.pem`；介质上的文件权限同样要是 600。
