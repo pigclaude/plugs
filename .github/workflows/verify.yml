@@ -1,0 +1,38 @@
+# 校验官方目录的格式、签名和序号，并跑脚本测试。CI 只用 keys/ 里的公钥，不持有私钥。
+name: Verify catalog
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test tests/*.test.mjs
+      - name: 校验目录、签名和序号
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -n "$BASE" ] && git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            node scripts/verify-catalog.mjs --since "$BASE"
+          else
+            node scripts/verify-catalog.mjs
+          fi
+      - name: 仓库里没有私钥
+        run: |
+          if git grep -l -I -e "PRIVATE KEY" -- . ':!scripts' ':!tests' ':!.gitignore'; then
+            echo "仓库里出现了私钥" >&2
+            exit 1
+          fi

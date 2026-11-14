@@ -1,0 +1,4 @@
+# 私钥永远不进本仓库；只允许 keys/ 里的公钥。
+*.pem
+*.key
+!keys/*.pub.pem
