@@ -2,7 +2,7 @@
   "apiVersion": 1,
   "id": "pigclaude-marketplace-probe",
   "name": "插件市场验收样例",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pigclaudeVersion": "*",
   "description": "用于验收官方插件市场，仅返回自身版本。",
   "entry": "index.mjs",

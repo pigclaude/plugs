@@ -2,5 +2,5 @@
 
 /** 返回构建内固定的版本号。 */
 export default function version() {
-  return { version: "1.0.0" }
+  return { version: "1.0.1" }
 }
