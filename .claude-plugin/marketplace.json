@@ -8,12 +8,34 @@
     "description": "PigClaude 官方插件目录：每个插件经维护者审核，目录用离线密钥签名。",
     "pigclaude": {
       "formatVersion": 1,
-      "serial": 1,
-      "issuedAt": "2026-11-14T10:29:59Z",
-      "expiresAt": "2027-02-12T10:29:59Z",
+      "serial": 2,
+      "issuedAt": "2026-11-16T03:14:32Z",
+      "expiresAt": "2027-02-14T03:14:32Z",
       "revoked": [],
       "revokedKeys": []
     }
   },
-  "plugins": []
+  "plugins": [
+    {
+      "name": "pigclaude-marketplace-probe",
+      "description": "仅用于官方插件市场验收。唯一工具返回插件版本。MIT 许可。",
+      "version": "1.0.0",
+      "source": {
+        "source": "github",
+        "repo": "pigclaude/plugs",
+        "sha": "1fcd8d2cbcbf4c3a5ed3d4c23bac7d15f95b8bec"
+      },
+      "pigclaude": {
+        "kind": "capability",
+        "sha256": "de6c56e944874f36e1e4bf2a9a50c4626764293bd9cf4ce38657b8090a6deb09",
+        "permissions": [],
+        "domains": [],
+        "review": {
+          "status": "reviewed",
+          "reviewedAt": "2026-11-16T03:14:32Z",
+          "reviewedBy": "PigClaude QA（维护者确认测试上架）"
+        }
+      }
+    }
+  ]
 }
