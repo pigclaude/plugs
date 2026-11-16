@@ -1,0 +1,22 @@
+{
+  "apiVersion": 1,
+  "id": "pigclaude-marketplace-probe",
+  "name": "插件市场验收样例",
+  "version": "1.0.0",
+  "pigclaudeVersion": "*",
+  "description": "用于验收官方插件市场，仅返回自身版本。",
+  "entry": "index.mjs",
+  "tools": [
+    {
+      "name": "version",
+      "description": "返回测试插件版本。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    }
+  ],
+  "permissions": [],
+  "networkDomains": []
+}
