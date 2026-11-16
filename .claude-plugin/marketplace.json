@@ -8,34 +8,27 @@
     "description": "PigClaude 官方插件目录：每个插件经维护者审核，目录用离线密钥签名。",
     "pigclaude": {
       "formatVersion": 1,
-      "serial": 3,
-      "issuedAt": "2026-11-16T03:14:59Z",
-      "expiresAt": "2027-02-14T03:14:59Z",
-      "revoked": [],
+      "serial": 4,
+      "issuedAt": "2026-11-16T03:16:35Z",
+      "expiresAt": "2027-02-14T03:16:35Z",
+      "revoked": [
+        {
+          "name": "pigclaude-marketplace-probe",
+          "repo": "pigclaude/plugs",
+          "sha": "1fcd8d2cbcbf4c3a5ed3d4c23bac7d15f95b8bec",
+          "reason": "市场验收已完成，撤回测试样例。",
+          "revokedAt": "2026-11-16T03:16:35Z"
+        },
+        {
+          "name": "pigclaude-marketplace-probe",
+          "repo": "pigclaude/plugs",
+          "sha": "56dd0d6314b222ba549b0085d0b10f259b271400",
+          "reason": "市场验收已完成，撤回测试样例。",
+          "revokedAt": "2026-11-16T03:16:35Z"
+        }
+      ],
       "revokedKeys": []
     }
   },
-  "plugins": [
-    {
-      "name": "pigclaude-marketplace-probe",
-      "description": "仅用于官方插件市场验收。唯一工具返回插件版本。MIT 许可。",
-      "version": "1.0.1",
-      "source": {
-        "source": "github",
-        "repo": "pigclaude/plugs",
-        "sha": "56dd0d6314b222ba549b0085d0b10f259b271400"
-      },
-      "pigclaude": {
-        "kind": "capability",
-        "sha256": "26588f44b9a84cdf2dddda416549d5a259b572d1a009b6da85ae54718d78f937",
-        "permissions": [],
-        "domains": [],
-        "review": {
-          "status": "reviewed",
-          "reviewedAt": "2026-11-16T03:14:59Z",
-          "reviewedBy": "PigClaude QA（维护者确认测试上架）"
-        }
-      }
-    }
-  ]
+  "plugins": []
 }
